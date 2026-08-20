@@ -246,6 +246,34 @@ body {
 
 /* ===== 通勤地铁提醒 ===== */
 .metro-note { font-size: 0.8rem; color: var(--text-light); }
+.metro-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.btn-reset-trip {
+    font-size: 0.8rem; font-family: inherit; cursor: pointer;
+    background: transparent; color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px;
+    transition: var(--transition);
+}
+.btn-reset-trip:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+.metro-trip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+
+.btn-board {
+    font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer;
+    color: white; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border: none; border-radius: 20px; padding: 8px 20px;
+    transition: var(--transition); box-shadow: 0 2px 8px rgba(74,144,217,0.35);
+}
+.btn-board:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(74,144,217,0.4); }
+.btn-board:active { transform: scale(0.97); }
+
+.metro-trip-status {
+    font-size: 0.9rem; color: var(--text-secondary);
+    background: var(--primary-light); border-left: 3px solid var(--primary);
+    padding: 6px 12px; border-radius: 8px;
+}
+.metro-trip-status.arrived { background: #E8F8F0; border-left-color: var(--success); }
+.metro-trip-status strong { color: var(--success); }
 
 .metro-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
 

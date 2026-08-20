@@ -442,6 +442,7 @@ function getBeijingNow() {
         dateStr: bj.toISOString().split("T")[0],
         hours: bj.getUTCHours(),
         minutes: bj.getUTCMinutes(),
+        seconds: bj.getUTCSeconds(),
         day: bj.getUTCDay(),
     };
 }
@@ -453,10 +454,26 @@ function isWorkday() {
     return day >= 1 && day <= 5; // 周一至周五
 }
 
-function minutesUntil(timeStr) {
-    const [h, m] = timeStr.split(":").map(Number);
+function timeToSec(timeStr) {
+    const [h, m, s = 0] = timeStr.split(":").map(Number);
+    return h * 3600 + m * 60 + s;
+}
+
+function secToTime(total) {
+    const pad = n => String(n).padStart(2, "0");
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return s === 0 ? `${pad(h)}:${pad(m)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function currentBeijingSec() {
     const now = getBeijingNow();
-    return (h * 60 + m) - (now.hours * 60 + now.minutes);
+    return now.hours * 3600 + now.minutes * 60 + now.seconds;
+}
+
+function minutesUntil(timeStr) {
+    return Math.ceil((timeToSec(timeStr) - currentBeijingSec()) / 60);
 }
 
 function formatCountdown(mins) {
@@ -467,16 +484,116 @@ function formatCountdown(mins) {
 
 function hasRainNear(timeStr) {
     if (!todayHourlyData.length) return false;
-    const [h, m] = timeStr.split(":").map(Number);
-    const target = h * 60 + m;
+    const target = timeToSec(timeStr);
     return todayHourlyData.some(item => {
-        const [ih, im] = item.time.split(":").map(Number);
-        const diff = (ih * 60 + im) - target;
-        return diff >= -30 && diff <= 30 && (item.is_rainy || item.precipitation > 0);
+        const diff = timeToSec(item.time) - target;
+        return diff >= -1800 && diff <= 1800 && (item.is_rainy || item.precipitation > 0);
     });
 }
 
+// ============ 上车打卡状态（LocalStorage） ============
+
+const METRO_STORAGE_KEY = "metroTripState";
+
+// 结构：{ date, morning: {boardTimeSec, matched, correctedTimes} | null, evening: {...} | null }
+let metroState = { date: "", morning: null, evening: null };
+
+function loadMetroState() {
+    const today = getBeijingNow().dateStr;
+    try {
+        const raw = localStorage.getItem(METRO_STORAGE_KEY);
+        const saved = raw ? JSON.parse(raw) : null;
+        if (saved && saved.date === today) {
+            metroState = saved;
+            return;
+        }
+    } catch (e) { /* ignore */ }
+    metroState = { date: today, morning: null, evening: null };
+}
+
+function saveMetroState() {
+    try { localStorage.setItem(METRO_STORAGE_KEY, JSON.stringify(metroState)); }
+    catch (e) { /* ignore */ }
+}
+
+// 跨天自动重置（日期变化时清空打卡与修正记录）
+function ensureFreshState() {
+    const today = getBeijingNow().dateStr;
+    if (metroState.date !== today) {
+        metroState = { date: today, morning: null, evening: null };
+        saveMetroState();
+    }
+}
+
+// 匹配最近班次：差值在 ±5 分钟内视为命中，返回 { index, delta }
+function findMatch(dir, boardSec) {
+    let best = -1, bestDiff = Infinity;
+    dir.times.forEach((t, i) => {
+        const diff = Math.abs(boardSec - timeToSec(t));
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+    });
+    if (best >= 0 && bestDiff <= 300) {
+        return { index: best, delta: boardSec - timeToSec(dir.times[best]) };
+    }
+    return null;
+}
+
+function handleBoard(direction) {
+    ensureFreshState();
+    const dir = METRO_SCHEDULES[direction];
+    const boardSec = currentBeijingSec();
+    const match = findMatch(dir, boardSec);
+    if (match) {
+        const base = dir.times.map(timeToSec);
+        const correctedTimes = base.map((t, i) => (i < match.index ? t : t + match.delta));
+        metroState[direction] = { boardTimeSec: boardSec, matched: true, correctedTimes };
+    } else {
+        // 异常偏差：仅记录，不修正时刻表
+        metroState[direction] = { boardTimeSec: boardSec, matched: false, correctedTimes: null };
+    }
+    saveMetroState();
+    renderMetroDirection(direction);
+    renderTripStatus(direction);
+    updateMetroCountdown();
+}
+
+function resetTrips() {
+    metroState = { date: getBeijingNow().dateStr, morning: null, evening: null };
+    saveMetroState();
+    renderMetro();
+}
+
+function renderTripStatus(direction) {
+    const rec = metroState[direction];
+    const btn = document.querySelector(`.btn-board[data-direction="${direction}"]`);
+    const el = document.querySelector(`.metro-trip-status[data-status="${direction}"]`);
+    if (!btn || !el) return;
+    if (!rec) {
+        btn.classList.remove("hidden");
+        el.classList.add("hidden");
+        el.classList.remove("arrived");
+        el.textContent = "";
+        return;
+    }
+    btn.classList.add("hidden");
+    el.classList.remove("hidden");
+    const boardStr = secToTime(rec.boardTimeSec);
+    const arriveSec = rec.boardTimeSec + 22 * 60;
+    const arriveStr = secToTime(arriveSec);
+    const nowSec = currentBeijingSec();
+    if (nowSec >= arriveSec) {
+        el.classList.add("arrived");
+        el.innerHTML = `🕐 ${boardStr} 上车 · 🚏 <strong>已到达</strong>`;
+    } else {
+        el.classList.remove("arrived");
+        const remain = Math.ceil((arriveSec - nowSec) / 60);
+        const tag = rec.matched ? "已修正时刻" : "异常偏差";
+        el.innerHTML = `🕐 ${boardStr} 上车 · 🚏 约 ${remain} 分钟后到达（${arriveStr}）· ${tag}`;
+    }
+}
+
 function renderMetro() {
+    ensureFreshState();
     const section = document.getElementById("metroSection");
     // 仅在「佛山顺德」且为工作日时展示（东乐路/东平为佛山地铁3号线站点）
     if (currentCityId !== "shunde" || !isWorkday()) {
@@ -484,14 +601,17 @@ function renderMetro() {
         return;
     }
     section.classList.remove("hidden");
-    renderMetroDirection("metroMorning", METRO_SCHEDULES.morning);
-    renderMetroDirection("metroEvening", METRO_SCHEDULES.evening);
-    updateMetroCountdown();
+    renderMetroDirection("morning");
+    renderMetroDirection("evening");
+    updateMetro();
 }
 
-function renderMetroDirection(containerId, dir) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = dir.times.map(time => {
+function renderMetroDirection(direction) {
+    const dir = METRO_SCHEDULES[direction];
+    const rec = metroState[direction];
+    const times = (rec && rec.correctedTimes) ? rec.correctedTimes.map(secToTime) : dir.times;
+    const container = document.getElementById(direction === "morning" ? "metroMorning" : "metroEvening");
+    container.innerHTML = times.map(time => {
         const rainy = hasRainNear(time);
         return `
             <li class="metro-item" data-time="${time}">
@@ -518,6 +638,20 @@ function updateMetroCountdown() {
     });
 }
 
+function updateMetro() {
+    updateMetroCountdown();
+    renderTripStatus("morning");
+    renderTripStatus("evening");
+}
+
+function initMetroControls() {
+    document.querySelectorAll(".btn-board").forEach(btn => {
+        btn.addEventListener("click", () => handleBoard(btn.dataset.direction));
+    });
+    const resetBtn = document.getElementById("btnResetTrip");
+    if (resetBtn) resetBtn.addEventListener("click", resetTrips);
+}
+
 // ============ 城市切换 ============
 
 function updateLocationLabels() {
@@ -542,8 +676,10 @@ function initCityTabs() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    loadMetroState();
     initCityTabs();
+    initMetroControls();
     fetchWeather();
 });
 setInterval(fetchWeather, 30 * 60 * 1000);
-setInterval(updateMetroCountdown, 30 * 1000);
+setInterval(updateMetro, 30 * 1000);

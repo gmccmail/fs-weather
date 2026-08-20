@@ -81,7 +81,10 @@
                 <section class="card metro-section hidden" id="metroSection">
                     <div class="section-header">
                         <h2><span class="section-icon">🚇</span> 通勤地铁提醒</h2>
-                        <span class="metro-note">仅工作日显示 · 每 30 秒自动刷新</span>
+                        <div class="metro-header-actions">
+                            <span class="metro-note">仅工作日显示 · 每 30 秒自动刷新</span>
+                            <button class="btn-reset-trip" id="btnResetTrip" title="清空打卡与修正记录">🔄 重置行程</button>
+                        </div>
                     </div>
                     <div class="metro-blocks">
                         <div class="metro-block">
@@ -90,6 +93,10 @@
                                 <h3>上班通勤</h3>
                                 <span class="metro-route">东乐路站 → 东平站 <em>佛山大学方向</em></span>
                             </div>
+                            <div class="metro-trip">
+                                <button class="btn-board" data-direction="morning">🚌 我上车了</button>
+                                <span class="metro-trip-status hidden" data-status="morning"></span>
+                            </div>
                             <ul class="metro-list" id="metroMorning"></ul>
                         </div>
                         <div class="metro-block">
@@ -97,6 +104,10 @@
                                 <span class="metro-direction-icon">🏠</span>
                                 <h3>下班返程</h3>
                                 <span class="metro-route">东平站 → 东乐路站 <em>顺德学院方向</em></span>
+                            </div>
+                            <div class="metro-trip">
+                                <button class="btn-board" data-direction="evening">🚌 我上车了</button>
+                                <span class="metro-trip-status hidden" data-status="evening"></span>
                             </div>
                             <ul class="metro-list" id="metroEvening"></ul>
                         </div>
