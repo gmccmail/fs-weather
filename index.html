@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佛山顺德 · 天气通</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🌤️</span>
+                    <div class="logo-text">
+                        <h1>顺德天气通</h1>
+                        <span class="logo-subtitle">Shunde Weather · 沉浸式气象服务</span>
+                    </div>
+                </div>
+                <div class="header-info">
+                    <span class="update-time" id="updateTime">加载中...</span>
+                    <button class="btn-refresh" onclick="fetchWeather()" title="刷新数据">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                        </svg>
+                        刷新
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="loading" id="loading">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <p>正在获取顺德最新天气数据...</p>
+            </div>
+
+            <div class="error hidden" id="error">
+                <div class="error-icon">⚠️</div>
+                <h3>数据获取失败</h3>
+                <p id="errorMsg">请检查网络连接后重试</p>
+                <button onclick="fetchWeather()" class="btn-retry">重新加载</button>
+            </div>
+
+            <div class="weather-content hidden" id="weatherContent">
+
+                <section class="card current-weather" id="currentWeather">
+                    <div class="current-main">
+                        <div class="current-temp-block">
+                            <div class="temp-value" id="currentTemp">--°C</div>
+                            <div class="temp-feels">体感温度 <span id="feelsLike">--°C</span></div>
+                        </div>
+                        <div class="current-info-block">
+                            <div class="weather-icon-big" id="weatherIconBig">☀️</div>
+                            <div class="weather-desc" id="weatherDesc">加载中</div>
+                            <div class="weather-location">📍 佛山顺德</div>
+                        </div>
+                    </div>
+                    <div class="current-details" id="currentDetails"></div>
+                </section>
+
+                <section class="card rain-section">
+                    <div class="section-header">
+                        <h2><span class="section-icon">🌧️</span> 今日逐小时降雨预测</h2>
+                        <div class="rain-summary" id="rainSummary"></div>
+                    </div>
+                    <div class="hourly-scroll" id="hourlyContainer">
+                        <div class="hourly-grid" id="hourlyGrid"></div>
+                    </div>
+                </section>
+
+                <section class="card advice-section">
+                    <div class="section-header">
+                        <h2><span class="section-icon">💡</span> 天气建议</h2>
+                    </div>
+                    <div class="advice-list" id="adviceList"></div>
+                </section>
+
+                <section class="card yesterday-section">
+                    <div class="section-header">
+                        <h2><span class="section-icon">📊</span> 昨日天气回顾</h2>
+                    </div>
+                    <div class="yesterday-grid" id="yesterdayGrid"></div>
+                </section>
+
+                <section class="card forecast-section">
+                    <div class="section-header">
+                        <h2><span class="section-icon">📅</span> 未来3天天气预报</h2>
+                    </div>
+                    <div class="forecast-grid" id="forecastGrid"></div>
+                </section>
+
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>数据来源：Open-Meteo API · 更新时间：<span id="footerUpdateTime">--</span></p>
+            <p class="footer-sub">佛山顺德 · 北纬22.80° 东经113.10°</p>
+        </footer>
+    </div>
+
+    <script src="weather.js"></script>
+</body>
+</html>
