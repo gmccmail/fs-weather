@@ -244,6 +244,31 @@ body {
 .forecast-card .forecast-detail-item .detail-label { color: var(--text-light); font-size: 0.7rem; }
 .forecast-card .forecast-detail-item .detail-value { font-weight: 600; font-size: 0.9rem; }
 
+/* ===== 未来2小时降水 ===== */
+.rain-2h-summary { font-size: 0.82rem; font-weight: 600; }
+.rain-2h-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; background: #FDE8E8; color: var(--danger); }
+.rain-2h-badge.ok { background: #E8F8F0; color: var(--success); }
+
+.rain-2h-list { display: flex; flex-direction: column; gap: 14px; }
+.rain-2h-item { display: flex; flex-direction: column; gap: 6px; }
+
+.rain-2h-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rain-2h-time { display: flex; align-items: baseline; gap: 6px; }
+.rain-2h-hour { font-size: 1rem; font-weight: 700; color: var(--primary); }
+.rain-2h-label { font-size: 0.75rem; color: var(--text-light); }
+.rain-2h-wx { font-size: 0.82rem; color: var(--text-secondary); }
+
+.rain-2h-bar-wrap { height: 12px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+.rain-2h-bar { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+.rain-2h-bar.dry { background: linear-gradient(90deg, #BFDCF7, var(--primary)); }
+.rain-2h-bar.rainy { background: linear-gradient(90deg, #7DD3A8, var(--success)); }
+.rain-2h-bar.heavy { background: linear-gradient(90deg, #F8C471, var(--danger)); }
+
+.rain-2h-meta { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); }
+.rain-2h-prob { font-weight: 600; }
+.rain-2h-amt { color: var(--danger); }
+.rain-2h-amt.dry { color: var(--success); }
+
 /* ===== 通勤地铁提醒 ===== */
 .metro-note { font-size: 0.8rem; color: var(--text-light); }
 .metro-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

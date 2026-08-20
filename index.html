@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>广东天气通 · 佛山顺德 / 汕头 / 东莞</title>
+    <title>广东天气通 · 佛山顺德 / 汕头 / 东莞 / 深圳</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 </head>
@@ -15,7 +15,7 @@
                     <span class="logo-icon">🌤️</span>
                     <div class="logo-text">
                         <h1>广东天气通</h1>
-                        <span class="logo-subtitle">Guangdong Weather · 佛山顺德 / 汕头 / 东莞</span>
+                        <span class="logo-subtitle">Guangdong Weather · 佛山顺德 / 汕头 / 东莞 / 深圳</span>
                     </div>
                 </div>
                 <div class="header-info">
@@ -32,6 +32,7 @@
                 <button class="city-tab active" data-city="shunde">佛山顺德</button>
                 <button class="city-tab" data-city="shantou">汕头</button>
                 <button class="city-tab" data-city="dongguan">东莞</button>
+                <button class="city-tab" data-city="shenzhen">深圳</button>
             </nav>
         </header>
 
@@ -76,6 +77,14 @@
                     <div class="hourly-scroll" id="hourlyContainer">
                         <div class="hourly-grid" id="hourlyGrid"></div>
                     </div>
+                </section>
+
+                <section class="card rain-2h-section">
+                    <div class="section-header">
+                        <h2><span class="section-icon">⏰</span> 未来2小时降水</h2>
+                        <span class="rain-2h-summary" id="rain2hSummary"></span>
+                    </div>
+                    <div class="rain-2h-list" id="rain2hList"></div>
                 </section>
 
                 <section class="card metro-section hidden" id="metroSection">

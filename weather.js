@@ -1,13 +1,14 @@
 /**
- * 广东天气通（佛山顺德 / 汕头 / 东莞）- 纯前端静态版
+ * 广东天气通（佛山顺德 / 汕头 / 东莞 / 深圳）- 纯前端静态版
  * 直接调用 Open-Meteo API（免费，无需API密钥，支持CORS）
  */
 
-// 城市坐标（佛山顺德 / 汕头 / 东莞）
+// 城市坐标（佛山顺德 / 汕头 / 东莞 / 深圳）
 const CITIES = {
     shunde:   { name: "佛山顺德", lat: 22.80, lon: 113.10 },
     shantou:  { name: "汕头",     lat: 23.35, lon: 116.68 },
     dongguan: { name: "东莞",     lat: 23.02, lon: 113.75 },
+    shenzhen: { name: "深圳",     lat: 22.54, lon: 114.06 },
 };
 let currentCityId = "shunde";
 const TZ = "Asia/Shanghai";
@@ -127,6 +128,28 @@ function parseHourly(hourly, targetDate) {
         });
     }
     return items;
+}
+
+// 提取从当前小时开始的未来 count 个小时（可跨天），用于「未来2小时降水」
+function parseNextHours(hourly, nowBJ, count = 3) {
+    const base = nowBJ.toISOString().slice(0, 13) + ":00";
+    const startIdx = Math.max(0, hourly.time.findIndex(t => t >= base));
+    const result = [];
+    for (let i = startIdx; i < startIdx + count && i < hourly.time.length; i++) {
+        const code = hourly.weather_code[i];
+        const precip = round(hourly.precipitation?.[i] ?? 0, 2);
+        result.push({
+            time: hourly.time[i].split("T")[1],
+            precipitation: precip,
+            probability: hourly.precipitation_probability?.[i] ?? 0,
+            weather_code: code,
+            weather_icon: getWeather(code)[1],
+            weather_desc: getWeather(code)[0],
+            is_rainy: isRainy(code),
+            intensity: getRainIntensity(precip),
+        });
+    }
+    return result;
 }
 
 function parseDaily(daily, idx) {
@@ -275,6 +298,42 @@ function renderHourly(hourly) {
     }
 }
 
+function renderNextHours(items) {
+    const list = document.getElementById("rain2hList");
+    const summary = document.getElementById("rain2hSummary");
+    if (!list) return;
+    if (!items.length) { list.innerHTML = ""; return; }
+
+    const anyRain = items.some(h => h.is_rainy);
+    if (summary) {
+        summary.innerHTML = anyRain
+            ? '<span class="rain-2h-badge">🌧️ 未来2小时有雨，出门记得带伞</span>'
+            : '<span class="rain-2h-badge ok">✅ 未来2小时预计无雨</span>';
+    }
+
+    list.innerHTML = items.map((h, idx) => {
+        const label = idx === 0 ? "现在" : `+${idx}小时`;
+        const pct = Math.max(0, Math.min(100, h.probability));
+        const barClass = h.is_rainy ? (h.precipitation >= 5 ? "heavy" : "rainy") : "dry";
+        const amtText = h.is_rainy ? `${h.precipitation}mm · ${h.intensity}` : "无雨";
+        const amtClass = h.is_rainy ? "" : "dry";
+        return `
+            <div class="rain-2h-item">
+                <div class="rain-2h-head">
+                    <span class="rain-2h-time"><span class="rain-2h-hour">${h.time.slice(0,5)}</span><span class="rain-2h-label">${label}</span></span>
+                    <span class="rain-2h-wx">${h.weather_icon} ${h.weather_desc}</span>
+                </div>
+                <div class="rain-2h-bar-wrap">
+                    <div class="rain-2h-bar ${barClass}" style="width:${pct}%"></div>
+                </div>
+                <div class="rain-2h-meta">
+                    <span class="rain-2h-prob">降水概率 ${h.probability}%</span>
+                    <span class="rain-2h-amt ${amtClass}">${amtText}</span>
+                </div>
+            </div>`;
+    }).join("");
+}
+
 function renderAdvice(advice) {
     const list = document.getElementById("adviceList");
     list.innerHTML = advice.map(a => `<div class="advice-item">${a}</div>`).join("");
@@ -383,6 +442,7 @@ async function fetchWeather() {
 
         renderCurrent({ current });
         renderHourly(todayHourly);
+        renderNextHours(parseNextHours(forecast.hourly, nowBJ, 3));
         renderAdvice(advice);
         renderYesterday(yesterday);
         renderForecast(forecastDays);
