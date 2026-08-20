@@ -179,6 +179,47 @@ function generateAdvice(current, hourly, forecast) {
     return adv;
 }
 
+// ============ 情绪化天气描述 ============
+
+// 依据天气代码与温度范围返回一句俏皮文案（确定性选取，避免每次刷新随机跳动）
+function getMoodText(c) {
+    if (!c) return "";
+    const t = c.temperature;
+    const code = c.weather_code;
+    const pick = (arr) => arr[Math.abs(Math.round(t)) % arr.length];
+
+    // 雷暴优先
+    if ([95, 96, 99].includes(code)) return pick([
+        "打雷啦⚡ 少出门，在家当个安静的美少年～",
+        "雷公公发威，今天适合宅家听雨看书～",
+    ]);
+    if (c.precipitation > 5) return pick([
+        "雨下得挺认真，出门别忘带伞，别跟天气拼脾气～",
+        "大雨哗啦啦，雨具＋慢行，安全第一～",
+    ]);
+    if (isRainy(code) || c.precipitation > 0) return pick([
+        "天在偷偷掉小珍珠，揣把伞再出门哦～",
+        "小雨润如酥，记得带把伞，浪漫也要防淋～",
+    ]);
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "雪花飘呀飘，记得裹成一只小粽子～";
+    if ([45, 48].includes(code)) return "雾蒙蒙的，开车慢一点，慢慢来比较快～";
+
+    if (t > 34) return pick([
+        "今日阳光热情似火，出门记得防晒＋多喝水～",
+        "热到融化预警，短袖、遮阳、冰饮三件套～",
+    ]);
+    if (t >= 28) return pick([
+        "太阳有点上头，防晒防暑别偷懒～",
+        "晴暖在线，适合把被子晒出阳光味～",
+    ]);
+    if (t >= 20) return pick([
+        "温度刚刚好，是个适合出门溜达的好日子～",
+        "微风不燥，阳光正好，快乐营业～",
+    ]);
+    if (t >= 10) return "凉风习习，加件薄外套正合适～";
+    return "冷飕飕的，秋衣秋裤安排上，别冻着自己～";
+}
+
 // ============ 渲染 ============
 
 function renderCurrent(data) {
@@ -188,6 +229,7 @@ function renderCurrent(data) {
     document.getElementById("feelsLike").textContent = `${c.feels_like}°C`;
     document.getElementById("weatherIconBig").textContent = c.weather_icon;
     document.getElementById("weatherDesc").textContent = c.weather_desc;
+    document.getElementById("weatherMood").textContent = getMoodText(c);
     document.getElementById("currentDetails").innerHTML = `
         <div class="detail-item"><span class="label">湿度</span><span class="value">${c.humidity}%</span></div>
         <div class="detail-item"><span class="label">降水</span><span class="value">${c.precipitation}mm</span></div>
