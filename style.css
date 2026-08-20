@@ -78,6 +78,27 @@ body {
 .btn-refresh:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
 .btn-refresh:active { transform: scale(0.97); }
 
+/* ===== City Tabs ===== */
+.city-tabs {
+    max-width: 1200px; margin: 0 auto;
+    padding: 0 24px 12px;
+    display: flex; gap: 12px; flex-wrap: wrap;
+}
+
+.city-tab {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white; padding: 8px 20px; border-radius: 20px;
+    cursor: pointer; font-size: 0.9rem; font-family: inherit;
+    transition: var(--transition);
+}
+
+.city-tab:hover { background: rgba(255,255,255,0.25); }
+.city-tab.active {
+    background: white; color: var(--primary);
+    font-weight: 700; border-color: white;
+}
+
 /* ===== Main ===== */
 .main-content { max-width: 1200px; margin: 0 auto; padding: 24px; }
 

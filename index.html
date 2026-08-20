@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>佛山顺德 · 天气通</title>
+    <title>广东天气通 · 佛山顺德 / 汕头 / 东莞</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 </head>
@@ -14,8 +14,8 @@
                 <div class="logo">
                     <span class="logo-icon">🌤️</span>
                     <div class="logo-text">
-                        <h1>顺德天气通</h1>
-                        <span class="logo-subtitle">Shunde Weather · 沉浸式气象服务</span>
+                        <h1>广东天气通</h1>
+                        <span class="logo-subtitle">Guangdong Weather · 佛山顺德 / 汕头 / 东莞</span>
                     </div>
                 </div>
                 <div class="header-info">
@@ -28,6 +28,11 @@
                     </button>
                 </div>
             </div>
+            <nav class="city-tabs" id="cityTabs">
+                <button class="city-tab active" data-city="shunde">佛山顺德</button>
+                <button class="city-tab" data-city="shantou">汕头</button>
+                <button class="city-tab" data-city="dongguan">东莞</button>
+            </nav>
         </header>
 
         <main class="main-content">
@@ -35,7 +40,7 @@
                 <div class="loading-spinner">
                     <div class="spinner"></div>
                 </div>
-                <p>正在获取顺德最新天气数据...</p>
+                <p id="loadingText">正在获取最新天气数据...</p>
             </div>
 
             <div class="error hidden" id="error">
@@ -56,7 +61,7 @@
                         <div class="current-info-block">
                             <div class="weather-icon-big" id="weatherIconBig">☀️</div>
                             <div class="weather-desc" id="weatherDesc">加载中</div>
-                            <div class="weather-location">📍 佛山顺德</div>
+                            <div class="weather-location" id="weatherLocation">📍 佛山顺德</div>
                         </div>
                     </div>
                     <div class="current-details" id="currentDetails"></div>
@@ -98,7 +103,7 @@
 
         <footer class="footer">
             <p>数据来源：Open-Meteo API · 更新时间：<span id="footerUpdateTime">--</span></p>
-            <p class="footer-sub">佛山顺德 · 北纬22.80° 东经113.10°</p>
+            <p class="footer-sub" id="footerLocation">佛山顺德 · 北纬22.80° 东经113.10°</p>
         </footer>
     </div>
 

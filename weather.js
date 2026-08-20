@@ -1,12 +1,18 @@
 /**
- * 顺德天气通 - 纯前端静态版
+ * 广东天气通（佛山顺德 / 汕头 / 东莞）- 纯前端静态版
  * 直接调用 Open-Meteo API（免费，无需API密钥，支持CORS）
  */
 
-// 顺德坐标
-const LAT = 22.80;
-const LON = 113.10;
+// 城市坐标（佛山顺德 / 汕头 / 东莞）
+const CITIES = {
+    shunde:   { name: "佛山顺德", lat: 22.80, lon: 113.10 },
+    shantou:  { name: "汕头",     lat: 23.35, lon: 116.68 },
+    dongguan: { name: "东莞",     lat: 23.02, lon: 113.75 },
+};
+let currentCityId = "shunde";
 const TZ = "Asia/Shanghai";
+
+function getCity() { return CITIES[currentCityId]; }
 
 // 天气代码映射
 const WEATHER_CODES = {
@@ -49,8 +55,9 @@ function formatDate(dateStr) {
 // ============ API 调用 ============
 
 async function fetchForecast() {
+    const city = getCity();
     const params = new URLSearchParams({
-        latitude: LAT, longitude: LON,
+        latitude: city.lat, longitude: city.lon,
         current: "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,pressure_msl,cloud_cover,uv_index",
         hourly: "temperature_2m,precipitation_probability,precipitation,rain,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,relative_humidity_2m,apparent_temperature,uv_index",
         daily: "temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,precipitation_hours,weather_code,sunrise,sunset,wind_speed_10m_max,wind_direction_10m_dominant,uv_index_max",
@@ -62,8 +69,9 @@ async function fetchForecast() {
 }
 
 async function fetchHistorical(dateStr) {
+    const city = getCity();
     const params = new URLSearchParams({
-        latitude: LAT, longitude: LON,
+        latitude: city.lat, longitude: city.lon,
         start_date: dateStr, end_date: dateStr,
         daily: "temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_hours,weather_code,wind_speed_10m_max,wind_direction_10m_dominant",
         timezone: TZ
@@ -280,6 +288,8 @@ async function fetchWeather() {
     error.classList.add("hidden");
     content.classList.add("hidden");
 
+    updateLocationLabels();
+
     try {
         const now = new Date();
         // 北京时间偏移 +8小时
@@ -343,5 +353,31 @@ async function fetchWeather() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", fetchWeather);
+// ============ 城市切换 ============
+
+function updateLocationLabels() {
+    const city = getCity();
+    document.getElementById("weatherLocation").textContent = `📍 ${city.name}`;
+    document.getElementById("footerLocation").textContent =
+        `${city.name} · 北纬${city.lat.toFixed(2)}° 东经${city.lon.toFixed(2)}°`;
+    document.getElementById("loadingText").textContent = `正在获取${city.name}最新天气数据...`;
+}
+
+function initCityTabs() {
+    document.querySelectorAll(".city-tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+            const id = tab.dataset.city;
+            if (id === currentCityId) return;
+            currentCityId = id;
+            document.querySelectorAll(".city-tab").forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            fetchWeather();
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    initCityTabs();
+    fetchWeather();
+});
 setInterval(fetchWeather, 30 * 60 * 1000);
