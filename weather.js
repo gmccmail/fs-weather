@@ -494,6 +494,8 @@ function hasRainNear(timeStr) {
 // ============ 上车打卡状态（LocalStorage） ============
 
 const METRO_STORAGE_KEY = "metroTripState";
+const TRIP_DURATION_MIN = 43;   // 单程乘车耗时（分钟）
+const ARRIVAL_REMIND_MIN = 3;   // 到站前提前提醒（分钟）
 
 // 结构：{ date, morning: {boardTimeSec, matched, correctedTimes} | null, evening: {...} | null }
 let metroState = { date: "", morning: null, evening: null };
@@ -578,7 +580,7 @@ function renderTripStatus(direction) {
     btn.classList.add("hidden");
     el.classList.remove("hidden");
     const boardStr = secToTime(rec.boardTimeSec);
-    const arriveSec = rec.boardTimeSec + 22 * 60;
+    const arriveSec = rec.boardTimeSec + TRIP_DURATION_MIN * 60;
     const arriveStr = secToTime(arriveSec);
     const nowSec = currentBeijingSec();
     if (nowSec >= arriveSec) {
@@ -590,6 +592,33 @@ function renderTripStatus(direction) {
         const tag = rec.matched ? "已修正时刻" : "异常偏差";
         el.innerHTML = `🕐 ${boardStr} 上车 · 🚏 约 ${remain} 分钟后到达（${arriveStr}）· ${tag}`;
     }
+}
+
+function checkArrivalReminder() {
+    ["morning", "evening"].forEach(direction => {
+        const rec = metroState[direction];
+        if (!rec || rec.notified) return;
+        const arriveSec = rec.boardTimeSec + TRIP_DURATION_MIN * 60;
+        const diffSec = arriveSec - currentBeijingSec();
+        if (diffSec > 0 && diffSec <= ARRIVAL_REMIND_MIN * 60) {
+            rec.notified = true;
+            saveMetroState();
+            showArrivalToast(direction, arriveSec);
+        }
+    });
+}
+
+let arrivalToastTimer = null;
+function showArrivalToast(direction, arriveSec) {
+    const label = direction === "morning" ? "上班通勤" : "下班返程";
+    const arriveStr = secToTime(arriveSec);
+    const textEl = document.getElementById("arrivalToastText");
+    const toast = document.getElementById("arrivalToast");
+    if (!textEl || !toast) return;
+    textEl.textContent = `${label} 即将到站（预计 ${arriveStr} 到达），请准备下车～`;
+    toast.classList.remove("hidden");
+    clearTimeout(arrivalToastTimer);
+    arrivalToastTimer = setTimeout(() => toast.classList.add("hidden"), 10000);
 }
 
 function renderMetro() {
@@ -639,9 +668,11 @@ function updateMetroCountdown() {
 }
 
 function updateMetro() {
+    ensureFreshState();
     updateMetroCountdown();
     renderTripStatus("morning");
     renderTripStatus("evening");
+    checkArrivalReminder();
 }
 
 function initMetroControls() {
@@ -650,6 +681,10 @@ function initMetroControls() {
     });
     const resetBtn = document.getElementById("btnResetTrip");
     if (resetBtn) resetBtn.addEventListener("click", resetTrips);
+    const toastClose = document.getElementById("arrivalToastClose");
+    if (toastClose) toastClose.addEventListener("click", () => {
+        document.getElementById("arrivalToast").classList.add("hidden");
+    });
 }
 
 // ============ 城市切换 ============

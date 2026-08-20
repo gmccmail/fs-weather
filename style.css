@@ -314,6 +314,34 @@ body {
     animation: fadeInUp 0.4s ease;
 }
 
+/* ===== 到站提醒弹窗 ===== */
+.arrival-toast {
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; align-items: center; gap: 12px;
+    max-width: 360px; width: calc(100% - 40px);
+    background: linear-gradient(135deg, #FFF7ED, #FFF0E0);
+    border: 1px solid #FFD9B0;
+    border-left: 4px solid var(--accent);
+    border-radius: 12px; padding: 14px 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+    animation: toastIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.arrival-toast-icon { font-size: 1.6rem; line-height: 1; }
+.arrival-toast-body { flex: 1; }
+.arrival-toast-title { font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+.arrival-toast-text { font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; }
+.arrival-toast-close {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 1.3rem; line-height: 1; color: var(--text-light);
+    padding: 0 4px; transition: var(--transition);
+}
+.arrival-toast-close:hover { color: var(--text-primary); }
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== Footer ===== */
 .footer { text-align: center; padding: 24px 24px 32px; color: var(--text-light); font-size: 0.8rem; }
 .footer-sub { margin-top: 4px; font-size: 0.7rem; opacity: 0.7; }
