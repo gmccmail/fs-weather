@@ -14,6 +14,9 @@ const TZ = "Asia/Shanghai";
 
 function getCity() { return CITIES[currentCityId]; }
 
+// 当前城市今日逐小时数据（供「通勤地铁提醒」的雨情联动复用）
+let todayHourlyData = [];
+
 // 天气代码映射
 const WEATHER_CODES = {
     0: ["晴天", "☀️"], 1: ["大部晴朗", "🌤️"], 2: ["局部多云", "⛅"],
@@ -307,6 +310,7 @@ async function fetchWeather() {
 
         const current = parseCurrent(forecast.current);
         const todayHourly = parseHourly(forecast.hourly, todayStr);
+        todayHourlyData = todayHourly;
         const forecastDays = [];
         for (let i = 0; i < 3; i++) {
             forecastDays.push(parseDaily(forecast.daily, i));
@@ -340,6 +344,7 @@ async function fetchWeather() {
         renderAdvice(advice);
         renderYesterday(yesterday);
         renderForecast(forecastDays);
+        renderMetro();
 
         loading.classList.add("hidden");
         content.classList.remove("hidden");
@@ -351,6 +356,124 @@ async function fetchWeather() {
         document.getElementById("errorMsg").textContent =
             err.message.includes("fetch") ? "网络连接失败，请检查网络后重试" : err.message;
     }
+}
+
+// ============ 通勤地铁提醒 ============
+
+// 佛山地铁 3 号线班次时刻（计划到站时间 = 列车抵达起始站的时刻）
+// 说明：以下为参考时刻，依据高峰行车间隔约 5分30秒 推算，接入时请按官方站点时刻表核对/替换。
+const METRO_SCHEDULES = {
+    morning: { // 上班：东乐路站 → 东平站（佛山大学方向）
+        times: ["07:00","07:06","07:12","07:18","07:24","07:30","07:36"],
+    },
+    evening: { // 下班：东平站 → 东乐路站（顺德学院方向）
+        times: ["16:45","16:51","16:57","17:03","17:09","17:15","17:21","17:27","17:33","17:39","17:45","17:51","17:57"],
+    },
+};
+
+// 2026 中国法定节假日（国务院办公厅通知）
+const HOLIDAYS_2026 = new Set([
+    "2026-01-01","2026-01-02","2026-01-03",                          // 元旦
+    "2026-02-15","2026-02-16","2026-02-17","2026-02-18","2026-02-19",
+    "2026-02-20","2026-02-21","2026-02-22","2026-02-23",             // 春节
+    "2026-04-04","2026-04-05","2026-04-06",                          // 清明节
+    "2026-05-01","2026-05-02","2026-05-03","2026-05-04","2026-05-05",// 劳动节
+    "2026-06-19","2026-06-20","2026-06-21",                          // 端午节
+    "2026-09-25","2026-09-26","2026-09-27",                          // 中秋节
+    "2026-10-01","2026-10-02","2026-10-03","2026-10-04",
+    "2026-10-05","2026-10-06","2026-10-07",                          // 国庆节
+]);
+
+// 2026 调休上班日（周末但需上班）
+const WORKING_WEEKENDS_2026 = new Set([
+    "2026-01-04", // 元旦调休（周日）
+    "2026-02-14", // 春节调休（周六）
+    "2026-02-28", // 春节调休（周六）
+    "2026-05-09", // 劳动节调休（周六）
+    "2026-09-20", // 国庆节调休（周日）
+    "2026-10-10", // 国庆节调休（周六）
+]);
+
+function getBeijingNow() {
+    const bj = new Date(new Date().getTime() + 8 * 3600000);
+    return {
+        dateStr: bj.toISOString().split("T")[0],
+        hours: bj.getUTCHours(),
+        minutes: bj.getUTCMinutes(),
+        day: bj.getUTCDay(),
+    };
+}
+
+function isWorkday() {
+    const { dateStr, day } = getBeijingNow();
+    if (WORKING_WEEKENDS_2026.has(dateStr)) return true;
+    if (HOLIDAYS_2026.has(dateStr)) return false;
+    return day >= 1 && day <= 5; // 周一至周五
+}
+
+function minutesUntil(timeStr) {
+    const [h, m] = timeStr.split(":").map(Number);
+    const now = getBeijingNow();
+    return (h * 60 + m) - (now.hours * 60 + now.minutes);
+}
+
+function formatCountdown(mins) {
+    if (mins < 60) return `还有 ${mins} 分钟`;
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return `还有 ${h} 小时 ${m} 分钟`;
+}
+
+function hasRainNear(timeStr) {
+    if (!todayHourlyData.length) return false;
+    const [h, m] = timeStr.split(":").map(Number);
+    const target = h * 60 + m;
+    return todayHourlyData.some(item => {
+        const [ih, im] = item.time.split(":").map(Number);
+        const diff = (ih * 60 + im) - target;
+        return diff >= -30 && diff <= 30 && (item.is_rainy || item.precipitation > 0);
+    });
+}
+
+function renderMetro() {
+    const section = document.getElementById("metroSection");
+    // 仅在「佛山顺德」且为工作日时展示（东乐路/东平为佛山地铁3号线站点）
+    if (currentCityId !== "shunde" || !isWorkday()) {
+        section.classList.add("hidden");
+        return;
+    }
+    section.classList.remove("hidden");
+    renderMetroDirection("metroMorning", METRO_SCHEDULES.morning);
+    renderMetroDirection("metroEvening", METRO_SCHEDULES.evening);
+    updateMetroCountdown();
+}
+
+function renderMetroDirection(containerId, dir) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = dir.times.map(time => {
+        const rainy = hasRainNear(time);
+        return `
+            <li class="metro-item" data-time="${time}">
+                <div class="metro-left">
+                    <span class="metro-time">${time}</span>
+                    <span class="metro-countdown">--</span>
+                </div>
+                <span class="metro-rain-hint${rainy ? "" : " hidden"}">🌧️ 此时段预计有雨，建议提前 5–10 分钟抵达车站</span>
+            </li>`;
+    }).join("");
+}
+
+function updateMetroCountdown() {
+    document.querySelectorAll(".metro-item").forEach(item => {
+        if (item.classList.contains("departed")) return;
+        const mins = minutesUntil(item.dataset.time);
+        const el = item.querySelector(".metro-countdown");
+        if (mins <= 0) {
+            item.classList.add("departed");
+            el.textContent = "已发车";
+        } else {
+            el.textContent = formatCountdown(mins);
+        }
+    });
 }
 
 // ============ 城市切换 ============
@@ -381,3 +504,4 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchWeather();
 });
 setInterval(fetchWeather, 30 * 60 * 1000);
+setInterval(updateMetroCountdown, 30 * 1000);

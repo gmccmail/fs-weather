@@ -237,6 +237,48 @@ body {
 .forecast-card .forecast-detail-item .detail-label { color: var(--text-light); font-size: 0.7rem; }
 .forecast-card .forecast-detail-item .detail-value { font-weight: 600; font-size: 0.9rem; }
 
+/* ===== 通勤地铁提醒 ===== */
+.metro-note { font-size: 0.8rem; color: var(--text-light); }
+
+.metro-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+
+.metro-block { background: var(--bg); border-radius: var(--radius-sm); padding: 16px; }
+
+.metro-block-header {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 12px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+.metro-block-header h3 { font-size: 1rem; font-weight: 700; }
+.metro-direction-icon { font-size: 1.3rem; }
+.metro-route { font-size: 0.85rem; color: var(--text-secondary); margin-left: auto; }
+.metro-route em { font-style: normal; color: var(--primary); font-size: 0.75rem; }
+
+.metro-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+.metro-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    transition: var(--transition);
+}
+.metro-left { display: flex; align-items: baseline; gap: 12px; }
+.metro-time { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.metro-countdown { font-size: 0.9rem; color: var(--primary); font-weight: 600; white-space: nowrap; }
+
+.metro-item.departed { opacity: 0.45; filter: grayscale(1); background: #F4F5F7; border-color: var(--border); }
+.metro-item.departed .metro-time { text-decoration: line-through; color: var(--text-light); }
+.metro-item.departed .metro-countdown { color: var(--text-light); }
+
+.metro-rain-hint {
+    margin-left: auto; max-width: 260px;
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 0.78rem; color: var(--danger);
+    background: #FDE8E8; border-left: 3px solid var(--danger);
+    padding: 6px 10px; border-radius: 6px; line-height: 1.4;
+    animation: fadeInUp 0.4s ease;
+}
+
 /* ===== Footer ===== */
 .footer { text-align: center; padding: 24px 24px 32px; color: var(--text-light); font-size: 0.8rem; }
 .footer-sub { margin-top: 4px; font-size: 0.7rem; opacity: 0.7; }
@@ -254,6 +296,9 @@ body {
     .hourly-grid { grid-template-columns: repeat(24, 70px); }
     .hourly-item { min-width: 65px; padding: 8px 4px; }
     .forecast-grid { grid-template-columns: 1fr; }
+    .metro-blocks { grid-template-columns: 1fr; }
+    .metro-item { flex-direction: column; align-items: stretch; }
+    .metro-rain-hint { margin-left: 0; max-width: none; }
 }
 
 @media (max-width: 480px) {
