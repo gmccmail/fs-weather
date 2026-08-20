@@ -497,6 +497,12 @@ const METRO_STORAGE_KEY = "metroTripState";
 const TRIP_DURATION_MIN = 43;   // 单程乘车耗时（分钟）
 const ARRIVAL_REMIND_MIN = 3;   // 到站前提前提醒（分钟）
 
+// 通勤时段窗口：用于自动展开对应方向，非窗口内视为「非通勤时段」
+const COMMUTE_WINDOWS = {
+    morning: { start: "06:00", end: "09:00" },  // 上班时段
+    evening: { start: "16:00", end: "19:00" },  // 下班时段
+};
+
 // 结构：{ date, morning: {boardTimeSec, matched, correctedTimes} | null, evening: {...} | null }
 let metroState = { date: "", morning: null, evening: null };
 
@@ -621,6 +627,49 @@ function showArrivalToast(direction, arriveSec) {
     arrivalToastTimer = setTimeout(() => toast.classList.add("hidden"), 10000);
 }
 
+function getCommutePeriod() {
+    const nowSec = currentBeijingSec();
+    if (nowSec >= timeToSec(COMMUTE_WINDOWS.morning.start) && nowSec < timeToSec(COMMUTE_WINDOWS.morning.end)) return "morning";
+    if (nowSec >= timeToSec(COMMUTE_WINDOWS.evening.start) && nowSec < timeToSec(COMMUTE_WINDOWS.evening.end)) return "evening";
+    return null; // 非通勤时段
+}
+
+function nextCommuteInfo() {
+    const nowSec = currentBeijingSec();
+    let best = null;
+    ["morning", "evening"].forEach(direction => {
+        const dir = METRO_SCHEDULES[direction];
+        const rec = metroState[direction];
+        const times = (rec && rec.correctedTimes) ? rec.correctedTimes.map(secToTime) : dir.times;
+        const label = direction === "morning" ? "上班" : "下班";
+        times.forEach(t => {
+            let diff = timeToSec(t) - nowSec;
+            if (diff <= 0) diff += 86400; // 已过的班次顺延到明天
+            if (!best || diff < best.diff) best = { diff, label, time: t };
+        });
+    });
+    return best;
+}
+
+function renderNextCommuteTag(visible) {
+    const tag = document.getElementById("metroNextCommute");
+    if (!tag) return;
+    if (!visible) { tag.classList.add("hidden"); return; }
+    const next = nextCommuteInfo();
+    if (!next) { tag.classList.add("hidden"); return; }
+    tag.classList.remove("hidden");
+    document.getElementById("metroNextText").innerHTML =
+        `<strong>${next.label} ${next.time}</strong> · ${formatCountdown(Math.ceil(next.diff / 60))}`;
+}
+
+function applySmartCollapse() {
+    const period = getCommutePeriod();
+    document.querySelectorAll(".metro-block[data-block]").forEach(block => {
+        block.classList.toggle("collapsed", block.dataset.block !== period);
+    });
+    renderNextCommuteTag(period === null);
+}
+
 function renderMetro() {
     ensureFreshState();
     const section = document.getElementById("metroSection");
@@ -673,6 +722,7 @@ function updateMetro() {
     renderTripStatus("morning");
     renderTripStatus("evening");
     checkArrivalReminder();
+    applySmartCollapse();
 }
 
 function initMetroControls() {

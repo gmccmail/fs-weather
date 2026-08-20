@@ -86,8 +86,12 @@
                             <button class="btn-reset-trip" id="btnResetTrip" title="清空打卡与修正记录">🔄 重置行程</button>
                         </div>
                     </div>
+                    <div class="metro-next-tag hidden" id="metroNextCommute">
+                        <span class="metro-next-label">下次通勤</span>
+                        <span class="metro-next-countdown" id="metroNextText"></span>
+                    </div>
                     <div class="metro-blocks">
-                        <div class="metro-block">
+                        <div class="metro-block" data-block="morning">
                             <div class="metro-block-header">
                                 <span class="metro-direction-icon">🏢</span>
                                 <h3>上班通勤</h3>
@@ -99,7 +103,7 @@
                             </div>
                             <ul class="metro-list" id="metroMorning"></ul>
                         </div>
-                        <div class="metro-block">
+                        <div class="metro-block" data-block="evening">
                             <div class="metro-block-header">
                                 <span class="metro-direction-icon">🏠</span>
                                 <h3>下班返程</h3>

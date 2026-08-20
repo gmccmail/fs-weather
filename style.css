@@ -275,6 +275,23 @@ body {
 .metro-trip-status.arrived { background: #E8F8F0; border-left-color: var(--success); }
 .metro-trip-status strong { color: var(--success); }
 
+.metro-next-tag {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, var(--primary-light), #F4F9FF);
+    border: 1px solid #D6E6FA; border-radius: 12px;
+    padding: 12px 16px; margin-bottom: 16px;
+}
+.metro-next-label {
+    font-size: 0.78rem; font-weight: 700; color: var(--primary);
+    padding: 3px 10px; background: white; border-radius: 20px;
+}
+.metro-next-countdown { font-size: 0.95rem; color: var(--text-primary); }
+.metro-next-countdown strong { color: var(--primary); }
+
+/* 智能折叠：非当前通勤方向收起班次与打卡区 */
+.metro-block.collapsed .metro-trip,
+.metro-block.collapsed .metro-list { display: none; }
+
 .metro-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
 
 .metro-block { background: var(--bg); border-radius: var(--radius-sm); padding: 16px; }
